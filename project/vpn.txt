@@ -1,0 +1,22 @@
+openvpn
+apt-get install openvpn
+server.conf
+	proto udp
+	port 1194
+	dev tun
+	auth none 
+	cioher none 	
+	ifconfig 10.8.0.1 10.8.0.2
+	verb 4
+sudo openvpn --config server.conf
+
+
+basic configuration in client
+client.conf
+	remote 192.168.80.128	-server ip
+	proto udp
+	port 1194
+	dev tun
+	auth none 
+	cioher none 	
+	ifconfig 10.8.0.2 10.8.0.1

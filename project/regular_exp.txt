@@ -1,0 +1,24 @@
+install apache2 on two debian:-
+
+1.140 & 1.141
+
+in 1.140
+cd /var/www/html/
+mkdir public
+cd public
+touch abc.txt
+touch abc.jpg
+touch abc.png
+touch abc.conf
+
+in 1.141
+
+nano /etc/apache2/sites_enables/000_default_conf
+
+go to last
+
+ProxyPreserveHost on
+ProxyPassMatch ^/internal/(.*[.](txt|conf))$ http://192.168.1.140/public/$1
+</VirtualHost>
+
+search 192.168.1.141/internal/abc.txt

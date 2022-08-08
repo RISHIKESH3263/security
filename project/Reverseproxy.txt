@@ -1,0 +1,35 @@
+deb2 apache2
+
+sudo sh -c 'echo "My Apache"> /var/www/html/html.index'
+
+ip a
+
+deb1 squid
+
+sudo nano /etc/squid/squid.conf
+acl shuhari_users dstdomain <squid_ip>              				line:1195  
+http_access allow shuhari_users						line: 1380
+http_port 3128 accel defaultsite=<squid_ip> vhost				line:1907
+cache_peer <apache2_ip> parent 80 0 no-query originserver name=shuhari		line:3238
+cache_peer_access shuhari allow shuhari_users				line:3276
+cache_peer_ shuhari deny all						line:3276
+sudo systemctl restart squid
+
+
+______For Load Balancing
+
+3 deb
+
+deb1
+sudo nano /etc/squid/squid.conf
+http_port 80 vhost							line:1907
+cache_peer <apache2_ip1> parent 80 0 no-query originserver roundrobin weight=1 name=one  
+cache_peer <apache2_ip2> parent 80 0 no-query originserver roundrobin weight=1 name=two line:3238
+visible_hostname <squid_ip>
+
+sudo systemctl restart squid
+
+
+
+
+

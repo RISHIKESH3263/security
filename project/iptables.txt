@@ -1,0 +1,333 @@
+IP Tables  - NetFilter is the inbuild linux firewall
+
+IP Table works in interacton layer
+NetFilter works in shell layer 
+
+
+user talk with iptable , iptable interacts with net filter and netfilter filters packet at kernel
+
+
+there are multiple tables in IPTable
+
+Table contains chains
+there are 3 chains - Input(traffic coming toward you) Output Forward(forwarding)
+we write rules in chain
+
+there are targets in table which we define in rule to jumpto
+
+default policy is for unmetioned rules either to allow or deny
+
+
+default table is filter table  
+filter	- is use for packet filtering
+nat
+mangle  - packet header manipluation or change or alteration
+raw	- is used for bypassing the conntrac module for specific port
+security- is used to apply the mandatory access control
+
+
+_________________________________________________________________________________________________
+
+LAB
+we have to allow output trafic but deny all unwanted input traffic 
+
+
+sudo iptable -L -v
+
+sudo iptable -f		-will flush iptable rules not default policy
+
+sudo apt-get install apache2 links 	-apache cli interface package
+
+links http://192.168.80.130		-to connect the cli apache server
+
+
+
+iptable -P FORWARD DROP   //-P -change default policy of forward chain
+iptable -P INPUT DROP  	 //change the default policy of input chain	
+
+
+iptable -A INPUT -i lo -j ACCEPT //-A add , -i interface ,-j jump to target accept
+
+
+________________________________________________________________________
+
+tcp threeway handshake consider as follows in ip table 
+
+client		server	 	state
+
+syn---------->			new
+   <-----------syn+ack		established
+ack---------->  
+
+__________________________________________________________________________
+
+to allow the established connection at the input chain 
+
+
+iptable -A INPUT -m state --state ESTABLISHED -j ACCEPT		//-m to load the module called state 
+								//--state state of packet
+
+on reboot iptable rules are discarded so we write a bash script to execute after startup
+
+__________________________________________________________________________
+iptable -F
+
+iptable -P INPUT DROP
+iptable -P OUTPUT ACCEPT
+iptable -P FORWARD DROP
+
+
+iptable -A INPUT -i lo -j ACCEPT
+ipatble -A INPUT -m state --state ESTABLISHED -j ACCEPT
+
+
+iptable -L -v
+
+__________________________________________________________________________
+
+to set a bash file to startup process we install persistance
+
+
+sudo iptables-save 
+ipatble-save > /etc/iptable/rules.v4	//save the iptable config file 
+
+apt-get install iptables-persistent
+
+to allow the protocol in iptable 
+______________________________________________________________
+
+iptable -A INPUT -p tcp --dport ssh -j ACCEPT
+iptable -A INPUT -p tcp --dport http -j ACCEPT
+_________________________________________________________________
+
+to allow the specific host to the specific protocol
+
+iptable -A INPUT -p tcp -dport ssh -s 192.168.80.130 -j ACCEPT
+
+
+to delete a rule in iptable 
+we either comment that rule in a script 
+ 
+or by tradtional method first find the line number of the rule by
+
+iptable -L --line-numbers
+
+
+then to remove the specific rule 
+
+iptable -D INPUT 6		-to delete the rule at input chain on line number 6
+
+
+_________________________________________________________________
+
+iptable -A INPUT -p tcp --dport 22:25 -s 192.168.80.128 -j ACCEPT
+
+iptable -A INPUT -m iprange --src-range 192.168.80.100-192.168.80.120 -j ACCEPT
+_________________________________________________________________
+
+
+FAIL2BAN
+
+
+apt-get install fail2ban
+
+
+fail2ban-client status  \\to view the status 
+
+
+fail2ban-client status sshd 	\\to view the jail
+
+
+fail2ban-client get sshd bantime	\\to get the ban time
+
+
+/etc/fail2ban/
+	fail2ban.conf main config file
+	jail.cof	configure jail timing
+
+
+
+iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT
+
+
+___________________________________________________________________________
+
+
+
+to block GeoIP from specific loactions 
+
+
+
+				   GeoIP DB (cloud)	xt_geoip_dl
+					  ^
+					  |
+			          GeoIP DB (local)	xt_geoip_build
+					  ^	
+					  |		
+					
+		iptables     <----->	New DB
+	
+
+apt-get install -y
+xz-utils gcc libc6-dev pkg-config make automake iptables-dev 
+linux-headers-4.19.0-5-amd64 libtext-csv-xs-perl libnet-cidr-lite-perl unzip
+
+download the sourcefile
+execute
+
+cd /tmp
+wget xtable -> file
+tar -xvf xtable
+cd xtable 
+sudo ./configure
+sudo make
+sudo make install
+sudo nano /usr/local/libexc/xtable-addons/xt_geoip_dl
+here give the path of geolite2-county-csv -> file which are present in 192.168.1.151
+
+cd
+mkdir xtables
+sudo mkdir /usr/share/xt_geoip
+cd xtables/
+sudo /usr/local/libexec/xtables-addons/xt_geoip_dl
+cd geolite2-----
+sudo /usr/local/libexec/xtables-addons/xt_geoip_build -D /usr/share/xt_geoip/
+cd
+
+
+sudo depmod -a
+sudo iptables -m geoip -h
+
+sudo iptables -A INPUT -m groip --src-cc -j LOG --log-level debug --log-prefix "|traffic|"
+
+
+sudo tail -f /var/log/syslog
+____________________________________________________________________________________________________
+
+ipforwarding -ip is just forwarded into other interface no nat is being performed
+
+
+Iptables nat
+
+iptables -t nat -L
+
+destinations is changing then we will use prerouting with dnat to destination ip to change	
+
+source natting		- natting at the source network
+destination natting	- natting at the destination network
+	snat - postrouting 
+	dnat - prerouting	
+
+
+
+____________________________________________________________________________________________________
+iptables -t nat -A POSTROUTING -o ens37 -j MASQUERADE
+
+iptables -t nat -A PREROUTING -p tcp --dport 4444 -j REDIRECT --to-port-80    //port forwarding
+
+____________________________________________________________________________________________________
+
+
+/proc/sys/net/ipv4/ip_forward		//ip forwarding path change the value to one
+
+
+___________________________________________________________________________________________________________
+
+
+port forwarding 
+
+forward 192.168.80.130:80  --> 192.168.30.140:80
+
+on 130 server 
+
+iptables -t nat -A PREROUTING -p tcp -d 192.168.80.130 --dport 80 -j DNAT --to-destination 192.168.80.140:80
+
+iptables -t nat -A POSTROUTING -p tcp -d 192.168.80.140 --dport 80 -j SNAT --to-source 192.168.80.130:80
+
+___________________________________________________________________________
+browser   -->  squid  -->  google 	//normal proxy server 
+
+		we used squid server ip to access the internet 
+
+
+
+Reverse Proxy
+
+browser---->squid------>   apache    //reverser proxy
+		
+	we willl ping squid server ip to access the apache server 
+		advantages   -we hide the real apache server ip to users
+		
+	
+
+deb1  -install apache 
+	sudo sh -c 'echo "My apache" > /var/www/html/index.html'
+
+
+deb2	- install squid
+
+	-under red section of /etc/squid/squid.conf
+	-acl shuhari_users dstdomain 192.168.80.128	
+
+uunder TAG: http_access
+	-http_access allow shuhari_users
+
+under http_port 3128
+	-http_port 3128 accel defaultsite=192.168.80.128 vhost
+
+under TAG: cache_peer
+	-cache_peer 192.168.80.141 parent 80 0 no-query originserver name=shuhari
+
+under TAG: cache_peer_access
+	-cache_peer_access shuhari allow shuhari_users
+	-cache_peer_access deny all
+
+
+
+____________________________________________________________________________________________________
+
+
+squid load balancer / server farming
+
+
+under http_port 3128
+	-http_port 80 vhost
+
+under TAG: cache_peer
+	-cache_peer 192.168.80.141 parent 80 0 no-query originserver round-robin weight=1 name=one
+	-cache_peer 192.168.80.143 parent 80 0 no-query originserver round-robin weight=1 name=two
+
+under last line
+	-visible_hostname 192.168.80.128
+
+apache log can be seen in
+	-tail -f /var/log/apache2/access.log
+
+
+
+deb [trusted=1] http://192.168.1.151/sw/repo/deb10/ buster main
+
+
+
+
+80.1   ---> base ip / adapter ip 
+
+80.2   --->  virtual adapter  --> ethernet --> google
+
+
+o
+
+iptables -A INPUT -p tcp --dport 80 -s 192.168.80.141 -j accept
+iptables -A INPUT -p tcp --dport 80 -j DROP
+
+
+----------------------------------------------
+
+iptables -A INPUT -i lo -j ACCEPT
+
+iptables -A FORWARD -i ens33 -o ens37 -j ACCEPT
+
+iptabels -A FORWARD -i ens37 -o ens33 -m state --state ESTABLISHED -j ACCEPT
+
+iptables -t nat -A POSTROUTING -o ens37 -j MASQUERADE
+----------------------------------------------

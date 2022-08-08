@@ -1,0 +1,59 @@
+dpkg-reconfigure tzdata
+apt install -y apache2 apache2-utils autoconf gcc libc6 libgd-dev make php python python3 unzip wget ca-certificates git
+cd /tmp/
+git clone https://github.com/Ajeetkumargupta/nagios
+cd nagios
+mv nagios-4.4.5.tar.gz /tmp/
+mv nagios-plugins-release-2.2.1.tar.gz /tmp/
+cd ..
+tar -xf nagios-4.4.5.tar.gz
+cd  nagios-4.4.5
+./configure --with-httpd-conf=/etc/apache2/sites-enabled/
+make all
+make install-groups-users
+passwd nagios
+sudo usermod -a -G nagios www-data
+make install
+make install-daemoninit
+make install-commandmode
+make install-config
+make install-webconf
+a2enmod rewrite
+a2enmod cgi
+htpasswd -c /usr/local/nagios/etc/htpasswd.users nagiosadmin
+/usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
+systemctl restart apache2
+systemctl restart nagios
+apt-get install -y automake autotools-dev bc build-essential dc gawk gettext libmcrypt-dev libnet-snmp-perl libssl-dev snmp
+cd /tmp/
+tar -xf nagios-plugins-release-2.2.1.tar.gz
+cd nagios-plugins-release-2.2.1
+./tools/setup
+./configure
+make
+make install
+cd /usr/local/nagios/libexec/
+git clone https://github.com/Ajeetkumargupta/nagios
+cd nagios
+rm -r nagios-4.4.5.tar.gz
+rm -r nagios-plugins-release-2.2.1.tar.gz
+mv check_ncpa.py /usr/local/nagios/libexec/
+cd ..
+rm -r nagios
+chmod 755 check_ncpa.py
+./check_ncpa.py -V
+cd
+#Add That line in end
+echo 'define command {
+        command_name    check_ncpa
+        command_line    $USER1$/check_ncpa.py -H $HOSTADDRESS$ $ARG1$
+}' >> /usr/local/nagios/etc/objects/commands.cfg
+
+#Add that line in line no 50
+
+sed -i '50 i cfg_dir=/usr/local/nagios/etc/servers' /usr/local/nagios/etc/nagios.cfg
+#Commented that line
+
+sed -i '/ hostgroups /s/^/#/'  /usr/local/nagios/etc/objects/templates.cfg
+mkdir /usr/local/nagios/etc/servers
+

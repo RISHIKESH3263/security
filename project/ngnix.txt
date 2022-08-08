@@ -1,0 +1,14 @@
+sudo apt install nginx -y
+sudo rm /etc/nginx/sites-enabled/*
+sudo touch /etc/nginx/sites-available/rp.conf
+
+sudo sh -c    'echo "server {
+        listen 80;
+        location / {
+                proxy_pass http://www.youtube.com;
+                }
+        }" >> /etc/nginx/sites-available/rp.conf'
+sudo ln -s /etc/nginx/sites-available/rp.conf /etc/nginx/sites-enabled/
+sudo systemctl restart nginx
+sudo nginx -t -s /etc/nginx/nginx.conf
+sudo systemctl status nginx

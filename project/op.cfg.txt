@@ -1,0 +1,61 @@
+define host {
+        use                     windows-server
+        host_name               win-10_1
+        alias                   Windows 7 Sys 1
+        address                 192.168.80.148
+        max_check_attempts      5
+}
+
+define service {
+        use                     generic-service
+        host_name               win-10_1
+        service_description     NCPA Agent Version
+        check_command           check_ncpa!-t 'password1234' -v -p -P 5693 -M system/agent_version
+}
+
+define service {
+        use                     generic-service
+        host_name               win-10_1
+        service_description     CPU Average
+        check_command           check_ncpa!-t 'password1234' -v -p -P 5693 -M cpu/percent -w 70 -c 80 -q 'aggregate=avg'
+}
+
+define service {
+        use                     generic-service
+        host_name               win-10_1
+        service_description     Virtual Memory
+        check_command           check_ncpa!-t 'password1234' -v -p -P 5693 -M memory/virtual -w 70 -c 90 -u G
+}
+
+define service {
+        use                     generic-service
+        host_name               win-10_1
+        service_description     Process Count
+        check_command           check_ncpa!-t 'password1234' -v -p -P 5693 -M processes -w 50 -c 80
+}
+
+
+
+define service {
+        use                     generic-service
+        host_name               win-10_1
+        service_description     Uptime
+        check_command           check_ncpa!-t 'password1234' -v -p -P 5693 -M 'system/uptime' --critical 86400:
+}
+
+define service {
+        use                     generic-service
+        host_name               win-10_1
+        service_description     C:\ Drive Space
+        check_command           check_ncpa!-t 'password1234' -v -p -P 5693 -M 'disk/logical/C:|/free' --warning 10: --critical 5: -u G:
+}
+
+define service {
+        use                     generic-service
+        host_name               win-10_1
+        service_description     Network Interface
+        check_command           check_ncpa!-t 'password1234' -v -p -P 5693 -M 'interface/Ethernet0/bytes_sent' -d -u k -w 10 -c 100
+        check_command           check_ncpa!-t 'password1234' -v -p -P 5693 -M 'interface/Ethernet0/bytes_recv' -d -u k -w 10 -c 100
+}
+
+
